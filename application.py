@@ -1,21 +1,21 @@
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
-from dash.dependencies import Input, Output
 import pandas as pd
-from data_load import DataReader
 import plotly
 import plotly.graph_objs as go
+import dash
+import dash_core_components as dcc
+import dash_bootstrap_components as dbc
+import dash_html_components as html
+from dash.dependencies import Input, Output
+from data_load import DataReader
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+dash_app  = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+app = dash_app.server
 
 covid = DataReader()
 
 df = covid.data[covid.data["Region"]=='Total']
 
-app.layout = html.Div([
+dash_app.layout = html.Div([
     html.Div([
         html.Div([
             dcc.Dropdown(
@@ -56,7 +56,7 @@ app.layout = html.Div([
     dcc.Graph(id='indicator-graphic')
 ])
 
-@app.callback(
+@dash_app .callback(
     Output('indicator-graphic', 'figure'),
     [Input('country', 'value'),
      Input('type', 'value'),
@@ -139,4 +139,4 @@ def update_graph(country, type, scale, align, count, numbers):
     }
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    dash_app .run_server(debug=True, port='80')
