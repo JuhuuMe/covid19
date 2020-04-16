@@ -13,7 +13,7 @@ from dash.dependencies import Input, Output
 from data_load import DataReader
 
 dash_app  = dash.Dash(__name__, 
-    external_stylesheets=[dbc.themes.CYBORG],
+    external_stylesheets=[dbc.themes.SLATE],
     meta_tags = [
         {
             "name": "description",
@@ -23,7 +23,7 @@ dash_app  = dash.Dash(__name__,
     ])
 
 colors = {
-    'background': '#333333',
+    'background': '#222222',
     'text': '#7FDBFF'
 }
 
@@ -39,7 +39,7 @@ dash_app.layout = html.Div(children= [
             dbc.Col(
                 html.Div([
                     html.H2(children='Covid-19 statistics'), 
-                ], style={'textAlign': 'center'}),
+                ], style={'textAlign': 'center'}), 
             )
         ]),
         dbc.Row([
@@ -50,7 +50,7 @@ dash_app.layout = html.Div(children= [
                         options=[{'label': i, 'value': i} for i in df['Country'].unique()],
                         multi=True,
                         #value=["Switzerland", "US", "Spain", "China", "Italy"]
-                        value=["Switzerland", "US", "Italy", "China"]
+                        value=["Switzerland"]
                     ),
                 ]),
             ),
@@ -73,7 +73,9 @@ dash_app.layout = html.Div(children= [
                         value='actual date',
                     )
                 ]),
-            ),
+            )
+        ]),
+        dbc.Row([
             dbc.Col(
                 html.Div([
                     daq.ToggleSwitch(
@@ -81,24 +83,24 @@ dash_app.layout = html.Div(children= [
                         label=['Linear', 'Log'],
                         value=False,
                     )
-                ]),
+                ], style={'width': '50%', 'display': 'inline-block'}),
             )
         ]),
         dbc.Row([
             dbc.Col(
-                html.Div(dcc.Graph(id='plot-abs-total', style = {'padding': 10}, config={'displayModeBar': False})
-                )),
+                html.Div(dcc.Graph(id='plot-abs-total', style = {'padding': 5}, config={'displayModeBar': False})
+                ), lg=6, md=12, xs=12),
             dbc.Col(
-                html.Div(dcc.Graph(id='plot-abs-change', style = {'padding': 10}, config={'displayModeBar': False})
-                )),
+                html.Div(dcc.Graph(id='plot-abs-change', style = {'padding': 5}, config={'displayModeBar': False})
+                ), lg=6, md=12, xs=12),
         ]),
         dbc.Row([
             dbc.Col(
-                html.Div(dcc.Graph(id='plot-rel-total', style = {'padding': 10}, config={'displayModeBar': False})
-                )),
+                html.Div(dcc.Graph(id='plot-rel-total', style = {'padding': 5}, config={'displayModeBar': False})
+                ), lg=6, md=12, xs=12),
             dbc.Col(
-                html.Div(dcc.Graph(id='plot-rel-change', style = {'padding': 10}, config={'displayModeBar': False})
-                ))
+                html.Div(dcc.Graph(id='plot-rel-change', style = {'padding': 5}, config={'displayModeBar': False})
+                ), lg=6, md=12, xs=12)
         ]),
     ]),
     html.Div(children='''
@@ -166,14 +168,15 @@ def update_graph(country, type, scale, align, count, numbers, title):
     for label in country:
         data = dff[dff["Country"]==label]
 
+        base_y = df[(df['count']=='absolute') & (df["Country"]==label)][type]
         y = data[type] if numbers=='Total' else data[type].diff()
 
         if align == 'date from 1st case':
-            index = next((index for index, value in enumerate(y) if value != 0), None)
+            index = next((index for index, value in enumerate(base_y) if value != 0), None)
             y = y[index:]
             x = list(range(0,len(y)))
         elif align == 'date from 100th case':
-            index = next((index for index, value in enumerate(y) if value > 100), None)
+            index = next((index for index, value in enumerate(base_y) if value > 100), None)
             y = y[index:]
             x = list(range(0,len(y)))
         else:
