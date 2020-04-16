@@ -32,19 +32,22 @@ df = covid.data[covid.data["Region"]=='Total']
 
 dash_app.layout = html.Div(children= [
     html.Div([
+            html.H2(children='Covid-19 statistics'), 
+        ], style={'width': '50%', 'display': 'inline-block', 'textAlign': 'center'}),
+    html.Div([
         html.Div([
             dcc.Dropdown(
                 id='country',
                 options=[{'label': i, 'value': i} for i in df['Country'].unique()],
                 multi=True,
                 #value=["Switzerland", "US", "Spain", "China", "Italy"]
-                value=["Switzerland"]
+                value=["Switzerland", "US", "Italy", "Spain", "South Korea", "China"]
             ),
             html.Div([
             dcc.Dropdown(
                 id='type',
                 options=[{'label': i, 'value': i} for i in ['confirmed cases','deceased cases', 'recovered cases', 'active cases']],
-                value='confirmed cases'
+                value='active cases'
             ),
             ], style={'width': '30%', 'display': 'inline-block'}),
             html.Div([
@@ -61,7 +64,7 @@ dash_app.layout = html.Div(children= [
                     value=False,
                 )
             ], style={'width': '40%', 'display': 'inline-block'})
-        ], style={'width': '50%', 'display': 'inline-block'})
+        ], style={'width': '50%', 'display': 'inline-block'}),
     ]),
 
     html.Div([
@@ -71,7 +74,10 @@ dash_app.layout = html.Div(children= [
     html.Div([
         dcc.Graph(id='plot-rel-total', style={'width': '50%', 'display': 'inline-block','padding': 10}, config={'displayModeBar': False}),
         dcc.Graph(id='plot-rel-change', style={'width': '50%', 'display': 'inline-block','padding': 10}, config={'displayModeBar': False})
-    ])
+    ]),
+    html.Div(children='''
+        The data is from Johns Hopkins CSSE. 
+        '''),
 ])
 
 @dash_app .callback(
@@ -188,4 +194,4 @@ def update_graph(country, type, scale, align, count, numbers, title):
     }
 
 if __name__ == '__main__':
-    dash_app .run_server(debug=True, port='80')
+    dash_app .run_server(debug=True, port='8000')
