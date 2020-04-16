@@ -1,11 +1,14 @@
 import pandas as pd
+
 import plotly
 import plotly.graph_objs as go
+
 import dash
-import dash_core_components as dcc
-import dash_bootstrap_components as dbc
 import dash_daq as daq
 import dash_html_components as html
+import dash_core_components as dcc
+import dash_bootstrap_components as dbc
+
 from dash.dependencies import Input, Output
 from data_load import DataReader
 
@@ -31,53 +34,76 @@ covid = DataReader()
 df = covid.data[covid.data["Region"]=='Total']
 
 dash_app.layout = html.Div(children= [
-    html.Div([
-            html.H2(children='Covid-19 statistics'), 
-        ], style={'width': '50%', 'display': 'inline-block', 'textAlign': 'center'}),
-    html.Div([
-        html.Div([
-            dcc.Dropdown(
-                id='country',
-                options=[{'label': i, 'value': i} for i in df['Country'].unique()],
-                multi=True,
-                #value=["Switzerland", "US", "Spain", "China", "Italy"]
-                value=["Switzerland", "US", "Italy", "Spain", "South Korea", "China"]
+    dbc.Container([
+        dbc.Row([
+            dbc.Col(
+                html.Div([
+                    html.H2(children='Covid-19 statistics'), 
+                ], style={'textAlign': 'center'}),
+            )
+        ]),
+        dbc.Row([
+            dbc.Col(
+                html.Div([
+                    dcc.Dropdown(
+                        id='country',
+                        options=[{'label': i, 'value': i} for i in df['Country'].unique()],
+                        multi=True,
+                        #value=["Switzerland", "US", "Spain", "China", "Italy"]
+                        value=["Switzerland", "US", "Italy", "China"]
+                    ),
+                ]),
             ),
-            html.Div([
-            dcc.Dropdown(
-                id='type',
-                options=[{'label': i, 'value': i} for i in ['confirmed cases','deceased cases', 'recovered cases', 'active cases']],
-                value='active cases'
+        ]),
+        dbc.Row([
+            dbc.Col(
+                html.Div([
+                    dcc.Dropdown(
+                        id='type',
+                        options=[{'label': i, 'value': i} for i in ['confirmed cases','deceased cases', 'recovered cases', 'active cases']],
+                        value='active cases'
+                    )
+                ]),
             ),
-            ], style={'width': '30%', 'display': 'inline-block'}),
-            html.Div([
-                dcc.Dropdown(
-                    id='align',
-                    options=[{'label': i, 'value': i} for i in ['actual date', 'date from 1st case', 'date from 100th case']],
-                    value='actual date',
-                )
-            ], style={'width': '30%', 'display': 'inline-block'}),
-            html.Div([
-                daq.ToggleSwitch(
-                    id='scale',
-                    label=['Linear', 'Log'],
-                    value=False,
-                )
-            ], style={'width': '40%', 'display': 'inline-block'})
-        ], style={'width': '50%', 'display': 'inline-block'}),
-    ]),
-
-    html.Div([
-        dcc.Graph(id='plot-abs-total', style={'width': '50%', 'display': 'inline-block','padding': 10}, config={'displayModeBar': False}),
-        dcc.Graph(id='plot-abs-change', style={'width': '50%', 'display': 'inline-block','padding': 10}, config={'displayModeBar': False})
-    ]),
-    html.Div([
-        dcc.Graph(id='plot-rel-total', style={'width': '50%', 'display': 'inline-block','padding': 10}, config={'displayModeBar': False}),
-        dcc.Graph(id='plot-rel-change', style={'width': '50%', 'display': 'inline-block','padding': 10}, config={'displayModeBar': False})
+            dbc.Col(
+                html.Div([
+                    dcc.Dropdown(
+                        id='align',
+                        options=[{'label': i, 'value': i} for i in ['actual date', 'date from 1st case', 'date from 100th case']],
+                        value='actual date',
+                    )
+                ]),
+            ),
+            dbc.Col(
+                html.Div([
+                    daq.ToggleSwitch(
+                        id='scale',
+                        label=['Linear', 'Log'],
+                        value=False,
+                    )
+                ]),
+            )
+        ]),
+        dbc.Row([
+            dbc.Col(
+                html.Div(dcc.Graph(id='plot-abs-total', style = {'padding': 10}, config={'displayModeBar': False})
+                )),
+            dbc.Col(
+                html.Div(dcc.Graph(id='plot-abs-change', style = {'padding': 10}, config={'displayModeBar': False})
+                )),
+        ]),
+        dbc.Row([
+            dbc.Col(
+                html.Div(dcc.Graph(id='plot-rel-total', style = {'padding': 10}, config={'displayModeBar': False})
+                )),
+            dbc.Col(
+                html.Div(dcc.Graph(id='plot-rel-change', style = {'padding': 10}, config={'displayModeBar': False})
+                ))
+        ]),
     ]),
     html.Div(children='''
         The data is from Johns Hopkins CSSE. 
-        '''),
+        ''', style={'textAlign': 'center'}),
 ])
 
 @dash_app .callback(
