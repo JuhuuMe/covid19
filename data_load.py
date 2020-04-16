@@ -1,4 +1,6 @@
 import os
+from datetime import datetime, timedelta
+import platform
 import pandas as pd
 import numpy as np
 from datetime import datetime as dt
@@ -8,46 +10,61 @@ class DataReader():
     data = None
 
     def __init__(self):
-        try:
-            self.data = pickle.load(open("data.pickle", "rb"))
-        except (OSError, IOError) as e:
-            df_global = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
-            #df_global.to_clipboard()
+        if os.path.exists("data.pickle"):
+            file_time = datetime.fromtimestamp(os.path.getmtime("data.pickle"))
+            last_update = datetime.now()
+            #update always at 20 oclock
+            if last_update.hour < 20:
+                last_update = datetime(last_update.year, last_update.month, last_update.day, 20, 0, 0, 0)-timedelta(1)
+            else:
+                last_update = datetime(last_update.year, last_update.month, last_update.day, 20, 0, 0, 0)
 
-            df_global_death = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv', case = 'deceased cases')
-            #df_global_death.to_clipboard()
-            df_global = pd.merge(df_global, df_global_death[['Region','Country','Date','deceased cases']], how='left', on=['Region','Country','Date'])
+            if file_time > last_update :
+                self.data = pickle.load(open("data.pickle", "rb"))
+            else:
+                self.create_pickle()
+        else:
+            self.create_pickle()
 
-            df_global_recovered = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv', case = 'recovered cases')
-            #df_global_recovered.to_clipboard()
-            df_global = pd.merge(df_global, df_global_recovered[['Region','Country','Date','recovered cases']], how='left', on=['Region','Country','Date'])
+    def create_pickle(self):
+        df_global = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+        #df_global.to_clipboard()
 
-            df_global['active cases'] = df_global['confirmed cases'] - df_global['deceased cases'] - df_global['recovered cases']
+        df_global_death = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv', case = 'deceased cases')
+        #df_global_death.to_clipboard()
+        df_global = pd.merge(df_global, df_global_death[['Region','Country','Date','deceased cases']], how='left', on=['Region','Country','Date'])
 
-            #df_us = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv', us=True)
-            #df_us_death = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv', us=True, confirmed=False)
-            #df_us['deceased cases'] = df_us_death['deceased cases']
-            #df = df_global.append(df_us, ignore_index=True)
+        df_global_recovered = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv', case = 'recovered cases')
+        #df_global_recovered.to_clipboard()
+        df_global = pd.merge(df_global, df_global_recovered[['Region','Country','Date','recovered cases']], how='left', on=['Region','Country','Date'])
 
-            #Country,Population,Change,Change,Density,Land Area,Migrants,FertRate,MedAge,UrbanPop,WorldShare
-            df_pop = pd.read_csv('pop.csv', error_bad_lines=False)
-            df_global = pd.merge(df_global, df_pop[['Country','Population']], how='left', on=['Country'])
+        df_global['active cases'] = df_global['confirmed cases'] - df_global['deceased cases'] - df_global['recovered cases']
 
-            df_global["count"]='absolute'
+        #df_us = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv', us=True)
+        #df_us_death = self.covid_df('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv', us=True, confirmed=False)
+        #df_us['deceased cases'] = df_us_death['deceased cases']
+        #df = df_global.append(df_us, ignore_index=True)
 
-            df_rel = df_global.copy()
-            df_rel["count"]='relative'
-            df_rel["confirmed cases"]=df_rel["confirmed cases"]/(df_rel["Population"]/1000000)
-            df_rel["deceased cases"]=df_rel["deceased cases"]/(df_rel["Population"]/1000000)
-            df_rel["recovered cases"]=df_rel["recovered cases"]/(df_rel["Population"]/1000000)
+        #Country,Population,Change,Change,Density,Land Area,Migrants,FertRate,MedAge,UrbanPop,WorldShare
+        df_pop = pd.read_csv('pop.csv', error_bad_lines=False)
+        df_global = pd.merge(df_global, df_pop[['Country','Population']], how='left', on=['Country'])
 
-            df_global = df_global.append(df_rel)
+        df_global["count"]='absolute'
 
-            df = df_global
+        df_rel = df_global.copy()
+        df_rel["count"]='relative'
+        df_rel["confirmed cases"]=df_rel["confirmed cases"]/(df_rel["Population"]/1000000)
+        df_rel["deceased cases"]=df_rel["deceased cases"]/(df_rel["Population"]/1000000)
+        df_rel["recovered cases"]=df_rel["recovered cases"]/(df_rel["Population"]/1000000)
+        df_rel["active cases"]=df_rel["active cases"]/(df_rel["Population"]/1000000)
 
-            self.data = df
+        df_global = df_global.append(df_rel)
 
-            pickle.dump(self.data, open("data.pickle", "wb"))   
+        df = df_global
+
+        self.data = df
+
+        pickle.dump(self.data, open("data.pickle", "wb"))
 
     def covid_df(self, url, us = False, case = 'confirmed cases'):
         df = pd.read_csv(url, error_bad_lines=False)
@@ -56,7 +73,7 @@ class DataReader():
             df = df.rename(columns={'Province/State': 'Region'})
             df = df.rename(columns={'Country/Region': 'Country'})
             df = df.rename(columns={'variable': 'Date'})
-            #df.loc[df['Country']=='United Kingdom','Region'] = df.loc[df['Country']=='United Kingdom','Region'].fillna('Great Britain') #exception
+            df.loc[df['Country']=='Korea, South','Country'] = 'South Korea' #exception
             df['Region'].fillna('Total', inplace=True)
         else:
             df.drop(['UID','iso2','iso3','code3','FIPS','Combined_Key','Population'], axis=1, inplace=True, errors='ignore')
