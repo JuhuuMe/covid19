@@ -1,4 +1,5 @@
 import pandas as pd
+import math
 
 import plotly
 import plotly.graph_objs as go
@@ -50,7 +51,7 @@ dash_app.layout = html.Div(children= [
                         options=[{'label': i, 'value': i} for i in df['Country'].unique()],
                         multi=True,
                         #value=["Switzerland", "US", "Spain", "China", "Italy"]
-                        value=["Switzerland"]
+                        value=["Switzerland", "Italy", "Spain", "South Korea", "US", "China"]
                     ),
                 ]),
             ),
@@ -81,7 +82,7 @@ dash_app.layout = html.Div(children= [
                     daq.ToggleSwitch(
                         id='scale',
                         label=['Linear', 'Log'],
-                        value=False,
+                        value=True,
                     )
                 ], style={'width': '50%', 'display': 'inline-block'}),
             )
@@ -149,15 +150,21 @@ def update_graph(country, type, scale, align, count, numbers, title):
         return {
             'data': [],
             'layout': dict(
+                title=title,
                 yaxis={
                     'title': 'cases',
-                    'type': 'log' if scale else 'linear'
+                    'type': 'log' if scale else 'linear',
+                    'fixedrange': True
                 },
                 xaxis={
-                    'title': 'date'
+                    'title': 'date',
+                    'fixedrange': True
                 },
                 margin={'l': 50, 'b': 50, 't': 50, 'r': 50},
-                hovermode='closest'
+                hovermode='closest',
+                plot_bgcolor=colors['background'],
+                paper_bgcolor=colors['background'],
+                font={'color': colors['text']}
             )
         }
 
@@ -175,12 +182,15 @@ def update_graph(country, type, scale, align, count, numbers, title):
             index = next((index for index, value in enumerate(base_y) if value != 0), None)
             y = y[index:]
             x = list(range(0,len(y)))
+            last_value = x[-1]
         elif align == 'date from 100th case':
             index = next((index for index, value in enumerate(base_y) if value > 100), None)
             y = y[index:]
             x = list(range(0,len(y)))
+            last_value = x[-1]
         else:
             x = data['Date']
+            last_value = x.iloc[-1]
         
         trace = go.Scatter(
             x=x,
@@ -195,11 +205,10 @@ def update_graph(country, type, scale, align, count, numbers, title):
         traces.append(trace)
 
         # labeling the left_side of the plot
-        last_value = y.iloc[-1]
-        annotations.append(dict(xref='paper', x=0.95, y=last_value,
-                                xanchor='middle', yanchor='bottom',
-                                text=label, # + ' {}'.format(last_value),
-                                font=dict(family='Arial', size=16),
+        annotations.append(dict(xref='x', x=last_value, y=math.log(y.iloc[-1])/math.log(10) if scale else y.iloc[-1],
+                                xanchor='left', yanchor='middle',
+                                text=label, 
+                                font=dict(family='Arial', size=12),
                                 showarrow=False))
 
     return {
@@ -208,10 +217,12 @@ def update_graph(country, type, scale, align, count, numbers, title):
             title=title,
             yaxis={
                 'title': 'cases',
-                'type': 'log' if scale else 'linear'
+                'type': 'log' if scale else 'linear',
+                'fixedrange': True
             },
             xaxis={
-                'title': 'date'
+                'title': 'date',
+                'fixedrange': True
             },
             showlegend=False,
             margin={'l': 50, 'b': 50, 't': 50, 'r': 50},
@@ -223,4 +234,4 @@ def update_graph(country, type, scale, align, count, numbers, title):
     }
 
 if __name__ == '__main__':
-    dash_app .run_server(debug=True, port='8000')
+            dash_app .run_server(debug=True, port='8000')
